@@ -1,0 +1,156 @@
+/*
+WARNING: Do NOT edit the input and output ports in this file in a text
+editor if you plan to continue editing the block that represents it in
+the Block Editor! File corruption is VERY likely to occur.
+*/
+(header "symbol" (version "1.1"))
+(symbol
+	(rect 16 16 248 240)
+	(text "sz_ad_param_sel" (rect 5 0 93 12)(font "Arial" ))
+	(text "inst" (rect 8 208 25 220)(font "Arial" ))
+	(port
+		(pt 0 32)
+		(input)
+		(text "szres" (rect 0 0 26 12)(font "Arial" ))
+		(text "szres" (rect 21 27 47 39)(font "Arial" ))
+		(line (pt 0 32)(pt 16 32)(line_width 1))
+	)
+	(port
+		(pt 0 48)
+		(input)
+		(text "CLKIN" (rect 0 0 35 12)(font "Arial" ))
+		(text "CLKIN" (rect 21 43 56 55)(font "Arial" ))
+		(line (pt 0 48)(pt 16 48)(line_width 1))
+	)
+	(port
+		(pt 0 64)
+		(input)
+		(text "clcgz" (rect 0 0 26 12)(font "Arial" ))
+		(text "clcgz" (rect 21 59 47 71)(font "Arial" ))
+		(line (pt 0 64)(pt 16 64)(line_width 1))
+	)
+	(port
+		(pt 0 80)
+		(input)
+		(text "zc_r" (rect 0 0 20 12)(font "Arial" ))
+		(text "zc_r" (rect 21 75 41 87)(font "Arial" ))
+		(line (pt 0 80)(pt 16 80)(line_width 1))
+	)
+	(port
+		(pt 0 96)
+		(input)
+		(text "clktx" (rect 0 0 23 12)(font "Arial" ))
+		(text "clktx" (rect 21 91 44 103)(font "Arial" ))
+		(line (pt 0 96)(pt 16 96)(line_width 1))
+	)
+	(port
+		(pt 0 112)
+		(input)
+		(text "OPra[51..0]" (rect 0 0 56 12)(font "Arial" ))
+		(text "OPra[51..0]" (rect 21 107 77 119)(font "Arial" ))
+		(line (pt 0 112)(pt 16 112)(line_width 3))
+	)
+	(port
+		(pt 0 128)
+		(input)
+		(text "PWM1" (rect 0 0 33 12)(font "Arial" ))
+		(text "PWM1" (rect 21 123 54 135)(font "Arial" ))
+		(line (pt 0 128)(pt 16 128)(line_width 1))
+	)
+	(port
+		(pt 0 144)
+		(input)
+		(text "PWM2" (rect 0 0 35 12)(font "Arial" ))
+		(text "PWM2" (rect 21 139 56 151)(font "Arial" ))
+		(line (pt 0 144)(pt 16 144)(line_width 1))
+	)
+	(port
+		(pt 0 160)
+		(input)
+		(text "llcduty[15..0]" (rect 0 0 64 12)(font "Arial" ))
+		(text "llcduty[15..0]" (rect 21 155 85 167)(font "Arial" ))
+		(line (pt 0 160)(pt 16 160)(line_width 3))
+	)
+	(port
+		(pt 0 176)
+		(input)
+		(text "i_uart_rxd" (rect 0 0 54 12)(font "Arial" ))
+		(text "i_uart_rxd" (rect 21 171 75 183)(font "Arial" ))
+		(line (pt 0 176)(pt 16 176)(line_width 1))
+	)
+	(port
+		(pt 232 32)
+		(output)
+		(text "o_clcgz" (rect 0 0 39 12)(font "Arial" ))
+		(text "o_clcgz" (rect 172 27 211 39)(font "Arial" ))
+		(line (pt 232 32)(pt 216 32)(line_width 1))
+	)
+	(port
+		(pt 232 48)
+		(output)
+		(text "o_zc_r" (rect 0 0 33 12)(font "Arial" ))
+		(text "o_zc_r" (rect 178 43 211 55)(font "Arial" ))
+		(line (pt 232 48)(pt 216 48)(line_width 1))
+	)
+	(port
+		(pt 232 64)
+		(output)
+		(text "o_clktx" (rect 0 0 36 12)(font "Arial" ))
+		(text "o_clktx" (rect 175 59 211 71)(font "Arial" ))
+		(line (pt 232 64)(pt 216 64)(line_width 1))
+	)
+	(port
+		(pt 232 80)
+		(output)
+		(text "o_OPra[51..0]" (rect 0 0 69 12)(font "Arial" ))
+		(text "o_OPra[51..0]" (rect 142 75 211 87)(font "Arial" ))
+		(line (pt 232 80)(pt 216 80)(line_width 3))
+	)
+	(port
+		(pt 232 96)
+		(output)
+		(text "o_PWM1" (rect 0 0 46 12)(font "Arial" ))
+		(text "o_PWM1" (rect 165 91 211 103)(font "Arial" ))
+		(line (pt 232 96)(pt 216 96)(line_width 1))
+	)
+	(port
+		(pt 232 112)
+		(output)
+		(text "o_PWM2" (rect 0 0 48 12)(font "Arial" ))
+		(text "o_PWM2" (rect 163 107 211 119)(font "Arial" ))
+		(line (pt 232 112)(pt 216 112)(line_width 1))
+	)
+	(port
+		(pt 232 128)
+		(output)
+		(text "o_llcduty[15..0]" (rect 0 0 77 12)(font "Arial" ))
+		(text "o_llcduty[15..0]" (rect 134 123 211 135)(font "Arial" ))
+		(line (pt 232 128)(pt 216 128)(line_width 3))
+	)
+	(port
+		(pt 232 144)
+		(output)
+		(text "o_uart_txd" (rect 0 0 54 12)(font "Arial" ))
+		(text "o_uart_txd" (rect 157 139 211 151)(font "Arial" ))
+		(line (pt 232 144)(pt 216 144)(line_width 1))
+	)
+	(parameter
+		"SIM_MODE"
+		"true"
+		""
+		("true" "false")
+		)
+	(parameter
+		"CLK_FREQ"
+		"30000000"
+		""
+		)
+	(parameter
+		"UART_BPS"
+		"115200"
+		""
+		)
+	(drawing
+		(rectangle (rect 16 16 216 208)(line_width 1))
+	)
+)
