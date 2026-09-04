@@ -5,11 +5,12 @@
 --Creation Date     :   2026.09.03
 --Description       :   多通道 ADC 采样低通滤波聚合（电压/电流）。
 --------------------------------------------------------------------------------
---Version           :   Rev 0.1
+--Version           :   Rev 0.0
 --modifier          :
 --Modify Date       :
 --Modify Record     :
 --------------------------------------------------------------------------------
+
 
 library ieee;
 use ieee.std_logic_1164.all;

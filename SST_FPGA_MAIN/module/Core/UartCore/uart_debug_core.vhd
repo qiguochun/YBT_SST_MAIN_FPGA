@@ -9,10 +9,10 @@
 --                      默认：50 MHz、115200 bps、16 路 × 32bit 整数。
 --                      暂不绑定物理引脚；地址业务解析后续补充。
 --------------------------------------------------------------------------------
---Version           :   Rev 0.4
---modifier          :   Qigc
---Modify Date       :   2026.09.03
---Modify Record     :   配合 debug_test Rev0.5（10ms 帧周期 / CLK_FREQ 传入）
+--Version           :   Rev 0.0
+--modifier          :
+--Modify Date       :
+--Modify Record     :
 --------------------------------------------------------------------------------
 
 library ieee;

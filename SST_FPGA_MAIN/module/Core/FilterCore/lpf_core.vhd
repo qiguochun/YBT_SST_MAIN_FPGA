@@ -6,11 +6,12 @@
 --Description       :   一阶低通（差分方程 + 有符号除法归一化）。
 --                      依赖 MathCore/signed_division。
 --------------------------------------------------------------------------------
---Version           :   Rev 0.1
+--Version           :   Rev 0.0
 --modifier          :
 --Modify Date       :
 --Modify Record     :
 --------------------------------------------------------------------------------
+
 
 library ieee;
 use ieee.std_logic_1164.all;

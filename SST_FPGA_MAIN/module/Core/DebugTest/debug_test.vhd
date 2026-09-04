@@ -8,13 +8,12 @@
 --                      帧格式：帧头 A5 5A FE 01 + 数据区 + 帧尾 00 00 80 7F。
 --                      默认 16 路 × 32bit 整数（小端），总帧长 72 字节。
 --                      配合 VOFA+ 插件 SstmcFrame（定长帧头 + uint32）使用。
---                      Rev 0.5：恢复 10ms 帧周期（CLK_FREQ/100），定时方式对齐
---                      FPGA_MODULE debug_test Rev0.3。
+--
 --------------------------------------------------------------------------------
---Version           :   Rev 0.5
---modifier          :   Qigc
---Modify Date       :   2026.09.03
---Modify Record     :   10ms 定时发帧；帧周期/字节节拍随 CLK_FREQ 缩放
+--Version           :   Rev 0.0
+--modifier          :
+--Modify Date       :
+--Modify Record     :
 --------------------------------------------------------------------------------
 
 library ieee;
@@ -48,7 +47,7 @@ architecture rtl of debug_test is
     constant DATA_BYTES : positive := DATA_WIDTH / 8;
     constant FRAME_LEN  : positive := HDR_BYTES + PARAM_COUNT * DATA_BYTES + TAIL_BYTES;
 
-    -- 帧周期：10ms = CLK_FREQ / 100（参考 FPGA_MODULE：50MHz/500000）
+    -- 帧周期：10ms = CLK_FREQ / 100
     constant FRAME_PERIOD_CNT : positive := CLK_FREQ / 100;
 
     function f_byte_tick(p_clk : positive) return positive is

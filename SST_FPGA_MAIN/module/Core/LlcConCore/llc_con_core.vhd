@@ -4,13 +4,14 @@
 --Original Author   :   Qigc
 --Creation Date     :   2026.09.03
 --Description       :   LLC 缓启控制核顶层（规范接口）。
---                      聚合：滑动平均 / 阶段 FSM / 斜坡(llc_ramp) / 周期 PI。
---                      已替代工程内原 dc_DABCON 例化（BDF inst19）。
+--                      聚合：滑动平均 / 阶段 FSM / 斜坡(llc_ramp)。
+--                      频率 PIR 暂不例化，后续再补；STAGE2/3 频率暂跟开环。
+--                      i_enable 脉冲启动；i_disable 停机回初始。
 --------------------------------------------------------------------------------
---Version           :   Rev 0.4
+--Version           :   Rev 1.4
 --modifier          :   Qigc
---Modify Date       :   2026.09.03
---Modify Record     :   命名 DAB→LLC（目录/实体/文件）
+--Modify Date       :   2026.09.04
+--Modify Record     :   去掉 llc_period_pi 例化；kp/ki/vref 预留待接
 --------------------------------------------------------------------------------
 
 library ieee;
@@ -18,64 +19,96 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity llc_con_core is
+    generic (
+        CLK_FREQ : positive := 30_000_000  -- 系统时钟频率 Hz（PIR 后续用）
+    );
     port (
         -- Global Clock
         i_sys_clk : in  std_logic;
         i_sys_rst : in  std_logic;  -- 异步复位，高有效
-        i_tick    : in  std_logic;  -- 控制节拍 102.4 kHz 单周期
+        i_tick    : in  std_logic;  -- AD/控制节拍（暂仅 vo_ma_filter）
+        i_enable  : in  std_logic := '0';  -- 缓启启动脉冲
+        i_disable : in  std_logic := '0';  -- 同步停机：清运行并回初始，高有效
+
+        -- delay_core 公共时基
+        i_delay_1ms : in std_logic;
+        i_delay_1s  : in std_logic;
 
         -- Analog / Param
-        i_vo   : in  std_logic_vector(15 downto 0);  -- Vo (V*10)
-        i_edv  : in  std_logic_vector(15 downto 0);  -- Vref 上限
-        i_kp   : in  std_logic_vector(15 downto 0);  -- PI KP Q12
-        i_ki   : in  std_logic_vector(15 downto 0);  -- PI KI Q12
-        i_d2set : in std_logic_vector(15 downto 0);  -- 预留，当前未使用
+        i_vo    : in  std_logic_vector(15 downto 0);
+        i_edv   : in  std_logic_vector(15 downto 0);
+        i_kp    : in  std_logic_vector(15 downto 0);  -- 预留：PIR，暂未使用
+        i_ki    : in  std_logic_vector(15 downto 0);  -- 预留：PIR，暂未使用
+        i_d2set : in  std_logic_vector(15 downto 0);
 
         -- Command Out
-        o_duty_cmd  : out std_logic_vector(15 downto 0);  -- 10000=1.0
-        o_period    : out std_logic_vector(15 downto 0);  -- 128MHz 周期计数
-        o_state     : out std_logic_vector(2 downto 0);
-        o_done      : out std_logic;
-        o_dco       : out std_logic_vector(15 downto 0)   -- Vo 滑动平均
+        o_duty_cmd : out std_logic_vector(15 downto 0);
+        o_period   : out std_logic_vector(15 downto 0);  -- f_sw（Hz/10）
+        o_state    : out std_logic_vector(2 downto 0);
+        o_done     : out std_logic;
+        o_dco      : out std_logic_vector(15 downto 0);
+        o_run_en   : out std_logic                       -- 运行使能：正常跑=1，停/故障=0
     );
 end entity llc_con_core;
 
 architecture rtl of llc_con_core is
 
-    constant T_START      : natural := 1600;
-    constant T_END        : natural := 5120;
-    constant DUTY_MAX     : natural := 5000;
+    ---------------------------------------------------------------------------
+    -- 缓启参数（architecture 常量）
+    -- 正常时长 → llc_ramp；超时时长 → llc_stage_fsm
+    ---------------------------------------------------------------------------
+    constant T_RAMP0_MS    : natural := 500;    -- STAGE0 开环 duty 斜坡
+    constant T_RAMP1_MS    : natural := 500;    -- STAGE1 开环频率斜坡
+    constant T_RAMP2_MS    : natural := 500;    -- STAGE2：当前电压→目标 的爬升时长
+    constant T_TO0_MS      : natural := 1000;   -- STAGE0 超时
+    constant T_TO1_MS      : natural := 1000;   -- STAGE1 超时
+    constant T_TO2_MS      : natural := 1000;   -- STAGE2 超时
+    constant V_STAGE2_DONE : natural := 7200;   -- STAGE2 目标/完成 720.0 V
+    constant V_FULL        : natural := 8000;   -- 额定上限 800.0 V（封顶用）
+    constant DUTY_DONE     : natural := 1024;   -- 50%
+    constant DUTY_MAX      : natural := 1024;
+    constant F_START       : natural := 8000;   -- 80.0 kHz
+    constant F_END         : natural := 6000;   -- 60.0 kHz
+    constant F_MIN         : natural := 2500;   -- 25.0 kHz（PIR 后续用）
 
-    signal w_dco       : std_logic_vector(15 downto 0);
-    signal w_ma_done   : std_logic;
-    signal w_state     : unsigned(2 downto 0);
-    signal w_timer     : unsigned(15 downto 0);
-    signal w_done      : std_logic;
-    signal w_enter_s2  : std_logic;
-
-    signal w_ol_duty   : unsigned(15 downto 0);
-    signal w_ol_period : unsigned(15 downto 0);
-    signal w_vref      : unsigned(15 downto 0);
-    signal w_pi_period : unsigned(15 downto 0);
+    signal w_dco         : std_logic_vector(15 downto 0);
+    signal w_ma_done     : std_logic;
+    signal w_state       : unsigned(2 downto 0);
+    signal w_done        : std_logic;
+    signal w_phase_done  : std_logic_vector(2 downto 0);
+    signal w_timeout_err : std_logic_vector(2 downto 0);
+    signal w_run         : std_logic;
+    signal w_fault_hold  : std_logic;
+    signal w_ol_duty     : unsigned(15 downto 0);
+    signal w_ol_freq     : unsigned(15 downto 0);
+    signal w_vref        : unsigned(15 downto 0);  -- ramp 产出，PIR 后续接
 
     signal r_duty   : unsigned(15 downto 0) := (others => '0');
-    signal r_period : unsigned(15 downto 0) := to_unsigned(T_START, 16);
+    signal r_freq   : unsigned(15 downto 0) := to_unsigned(F_START, 16);
+    signal r_run_en : std_logic := '0';
 
-    signal w_enable_s2 : std_logic;
+    -- 预留口保持连通，避免被综合优化掉
     signal w_d2set_keep : std_logic_vector(15 downto 0);
+    signal w_kp_keep    : std_logic_vector(15 downto 0);
+    signal w_ki_keep    : std_logic_vector(15 downto 0);
+    signal w_vref_cap   : unsigned(15 downto 0);
 
 begin
 
-    w_enable_s2  <= '1' when w_state = 2 else '0';
-    w_d2set_keep <= i_d2set;  -- 预留端口，保持连通避免悬空输入优化掉端口
+    w_vref_cap   <= to_unsigned(V_STAGE2_DONE, 16) when w_state = 2 else unsigned(i_edv);
+    w_d2set_keep <= i_d2set;
+    w_kp_keep    <= i_kp;
+    w_ki_keep    <= i_ki;
+
+    w_fault_hold <= '1' when (w_timeout_err /= "000") or (w_state = 4)  else '0';
 
     o_duty_cmd <= std_logic_vector(r_duty);
-    o_period   <= std_logic_vector(r_period);
+    o_period   <= std_logic_vector(r_freq);
     o_state    <= std_logic_vector(w_state);
-    o_done     <= w_done;
+    o_done     <= w_done and w_phase_done(2);
     o_dco      <= w_dco;
+    o_run_en   <= r_run_en;
 
-    -- ===================== Vo 滑动平均 =====================
     U_VO_MA : entity work.vo_ma_filter
         port map (
             i_sys_clk => i_sys_clk,
@@ -86,70 +119,84 @@ begin
             o_done    => w_ma_done
         );
 
-    -- ===================== 阶段 FSM =====================
     U_STAGE_FSM : entity work.llc_stage_fsm
+        generic map (
+            T_STAGE0_MS   => T_TO0_MS,
+            T_STAGE1_MS   => T_TO1_MS,
+            T_STAGE2_MS   => T_TO2_MS,
+            DUTY_DONE     => DUTY_DONE,
+            F_STAGE1_DONE => F_END,
+            V_STAGE2_DONE => V_STAGE2_DONE
+        )
         port map (
-            i_sys_clk  => i_sys_clk,
-            i_sys_rst  => i_sys_rst,
-            i_tick     => i_tick,
-            i_vo       => unsigned(i_vo),
-            o_state    => w_state,
-            o_timer    => w_timer,
-            o_done     => w_done,
-            o_enter_s2 => w_enter_s2
+            i_sys_clk     => i_sys_clk,
+            i_sys_rst     => i_sys_rst,
+            i_delay_1ms   => i_delay_1ms,
+            i_enable      => i_enable,
+            i_restart     => i_disable,
+            i_duty        => w_ol_duty,
+            i_freq        => w_ol_freq,
+            i_vo          => unsigned(w_dco),
+            o_run         => w_run,
+            o_state       => w_state,
+            o_done        => w_done,
+            o_phase_done  => w_phase_done,
+            o_timeout_err => w_timeout_err
         );
 
-    -- ===================== 开环 + Vref 斜坡 =====================
     U_RAMP : entity work.llc_ramp
+        generic map (
+            T_STAGE0_MS => T_RAMP0_MS,
+            T_STAGE1_MS => T_RAMP1_MS,
+            T_VREF_MS   => T_RAMP2_MS,
+            V_FULL      => V_FULL,
+            F_START     => F_START,
+            F_END       => F_END
+        )
         port map (
-            i_sys_clk  => i_sys_clk,
-            i_sys_rst  => i_sys_rst,
-            i_tick     => i_tick,
-            i_state    => w_state,
-            i_timer    => w_timer,
-            i_enable   => w_enable_s2,
-            i_load     => w_enter_s2,
-            i_load_val => unsigned(i_vo),
-            i_edv      => unsigned(i_edv),
-            o_duty     => w_ol_duty,
-            o_period   => w_ol_period,
-            o_vref     => w_vref
+            i_sys_clk   => i_sys_clk,
+            i_sys_rst   => i_sys_rst,
+            i_delay_1ms => i_delay_1ms,
+            i_run       => w_run,
+            i_state     => w_state,
+            i_vo        => unsigned(w_dco),
+            i_edv       => w_vref_cap,
+            o_duty      => w_ol_duty,
+            o_freq      => w_ol_freq,
+            o_vref      => w_vref
         );
 
-    -- ===================== 周期 PI =====================
-    U_PERIOD_PI : entity work.llc_period_pi
-        port map (
-            i_sys_clk => i_sys_clk,
-            i_sys_rst => i_sys_rst,
-            i_tick    => i_tick,
-            i_enable  => w_enable_s2,
-            i_vref    => signed(std_logic_vector(w_vref)),
-            i_dco     => signed(w_dco),
-            i_kp      => signed(i_kp),
-            i_ki      => signed(i_ki),
-            o_period  => w_pi_period
-        );
+    -- U_PERIOD_PI：暂不例化，后续补充 PIR
 
-    -- ===================== 输出选择 =====================
     process (i_sys_clk, i_sys_rst)
     begin
         if i_sys_rst = '1' then
             r_duty   <= (others => '0');
-            r_period <= to_unsigned(T_START, 16);
+            r_freq   <= to_unsigned(F_START, 16);
+            r_run_en <= '0';
         elsif rising_edge(i_sys_clk) then
-            r_duty <= w_ol_duty;
-            case to_integer(w_state) is
-                when 0 | 1 =>
-                    r_period <= w_ol_period;
-                when 2 =>
-                    r_period <= w_pi_period;
-                when 3 =>
-                    r_duty   <= to_unsigned(DUTY_MAX, 16);
-                    r_period <= w_pi_period;
-                when others =>
-                    r_period <= to_unsigned(T_START, 16);
-            end case;
-        end if;
+            if (i_disable = '1') or (w_run = '0') or (w_fault_hold = '1') then
+                -- 未运行 / 停机 / 超时FAULT：duty=0，频率 80 kHz，运行使能=0
+                r_duty   <= (others => '0');
+                r_freq   <= to_unsigned(F_START, 16);
+                r_run_en <= '0';
+            else
+                -- w_run=1：按阶段输出开环指令，运行使能=1
+                r_run_en <= '1';
+                r_duty   <= w_ol_duty;
+                case to_integer(w_state) is
+                    when 0 | 1 | 2 =>
+                        -- STAGE2 暂无 PIR：频率继续跟开环（停在 F_END）
+                        r_freq <= w_ol_freq;
+                    when 3 =>
+                        r_duty <= to_unsigned(DUTY_MAX, 16);
+                        r_freq <= w_ol_freq;
+                    when others =>
+                        r_freq <= to_unsigned(F_START, 16);
+                end case;
+            end if;
+
+            end if;
     end process;
 
 end architecture rtl;

@@ -4,12 +4,12 @@
 --Original Author   :   Qigc
 --Creation Date     :   2026.09.03
 --Description       :   有符号整数除法（恢复余数移位除法）。
---                      Rev 0.2：比较/减并入时钟进程（去掉长组合云），o_busy 寄存输出。
+--                      
 --------------------------------------------------------------------------------
---Version           :   Rev 0.2
---modifier          :   Qigc
---Modify Date       :   2026.09.03
---Modify Record     :   时序优化：移位比较减在 clocked process 内用 variable 完成
+--Version           :   Rev 0.0
+--modifier          :
+--Modify Date       :
+--Modify Record     :
 --------------------------------------------------------------------------------
 
 library ieee;

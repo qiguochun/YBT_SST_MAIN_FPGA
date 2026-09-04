@@ -4,13 +4,13 @@
 --Original Author   :   Qigc
 --Creation Date     :   2026.09.03
 --Description       :   牛顿迭代立方根：x = (2*x + a/(x*x)) / 3。
---                      Rev 0.2：去掉组合 32x32 乘，平方改走 mult_axb（3 拍流水）；
+--                      
 --                      状态机按 SQUARE -> DIV -> DIV3 对齐时序，利于 128 MHz。
 --------------------------------------------------------------------------------
---Version           :   Rev 0.2
---modifier          :   Qigc
---Modify Date       :   2026.09.03
---Modify Record     :   时序优化：mult_axb 替代组合乘；锁存被开方数；防 x=0
+--Version           :   Rev 0.0
+--modifier          :
+--Modify Date       :
+--Modify Record     :
 --------------------------------------------------------------------------------
 
 library ieee;

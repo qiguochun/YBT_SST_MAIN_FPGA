@@ -5,11 +5,12 @@
 --Creation Date     :   2026.09.03
 --Description       :   低速（约 1Hz 采样）电池电压 Tustin 低通。
 --------------------------------------------------------------------------------
---Version           :   Rev 0.1
+--Version           :   Rev 0.0
 --modifier          :
 --Modify Date       :
 --Modify Record     :
 --------------------------------------------------------------------------------
+
 
 library ieee;
 use ieee.std_logic_1164.all;

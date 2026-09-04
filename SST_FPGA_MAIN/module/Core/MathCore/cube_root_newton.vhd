@@ -6,10 +6,10 @@
 --Description       :   牛顿迭代法求立方根：x = (2*xn + a/xn^2)/3。
 --                      依赖 mult_axb（平方，3 拍）与 signed_division（两次除法）。
 --------------------------------------------------------------------------------
---Version           :   Rev 0.2
---modifier          :   Qigc
---Modify Date       :   2026.09.03
---Modify Record     :   S1 等待对齐 mult_axb 3 拍（原 2 拍偏短）
+--Version           :   Rev 0.0
+--modifier          :
+--Modify Date       :
+--Modify Record     :
 --------------------------------------------------------------------------------
 
 library ieee;
