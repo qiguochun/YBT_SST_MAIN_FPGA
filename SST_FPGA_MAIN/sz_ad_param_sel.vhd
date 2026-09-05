@@ -25,7 +25,8 @@
 --                        0x02 : 频率[15:0] -> r_P0ra（仅回传 CH2；输出改接 i_llc_period）
 --                        0x03 : 占空比[15:0] -> r_llcduty（仅回传 CH3；输出改接 i_llc_duty）
 --                        0x04 : SR使能   bit0：1=使能，0=失能（仅寄存器/回传）
---                        0x05 : LLC_EN 输出 bit0：1=使能，0=失能（独立端口）
+--                        0x05 : LLC_EN 输出 bit0：同步置位/清除 r_LLC_en（光纤 D 命令）
+--                               与端口 LLC_EN，主机缓启与从机 Dauto 一并控制
 --                      PWM1/PWM2：始终物理旁路。
 --                      SIM 输出：o_OPra[28:16]<=i_llc_period[12:0]，o_llcduty<=i_llc_duty
 --                      TX 监控通道（uint32，小端）：
@@ -41,8 +42,8 @@
 --------------------------------------------------------------------------------
 --Version           :   Rev 1.2
 --modifier          :   Qigc
---Modify Date       :   2026.09.04
---Modify Record     :   CH9~12 回传 llc_con_core 输出（duty/period/dco/state）
+--Modify Date       :   2026.09.05
+--Modify Record     :   0x05 同步 r_LLC_en，主机缓启与从机光纤 Dauto 一并置位
 --------------------------------------------------------------------------------
 
 library ieee;
@@ -213,11 +214,11 @@ begin
 
         ------------------------------------------------------------------
         -- 命令码解析：addr = start_addr + data_idx
-        --   0x01 LLC使能  bit0（OPra D命令）
+        --   0x01 LLC使能  bit0（OPra D命令 / 从机 Dauto）
         --   0x02 频率     -> r_P0ra
         --   0x03 占空比   -> r_llcduty
         --   0x04 SR使能   bit0
-        --   0x05 LLC_EN   bit0 -> 端口 LLC_EN
+        --   0x05 LLC_EN   bit0 -> 端口 LLC_EN，并同步 r_LLC_en
         ------------------------------------------------------------------
         process (CLKIN, szres)
             variable v_addr : integer range 0 to 255;
@@ -232,7 +233,7 @@ begin
                 if w_data_wr_en = '1' then
                     v_addr := to_integer(unsigned(w_start_addr) + unsigned(w_data_idx));
                     case v_addr is
-                        when 1 =>  -- LLC使能：1=使能，0=失能
+                        when 1 =>  -- LLC使能：1=使能，0=失能（仅光纤 D 命令）
                             r_LLC_en <= w_data_word(0);
                         when 2 =>  -- 频率
                             r_P0ra <= w_data_word;
@@ -240,8 +241,9 @@ begin
                             r_llcduty <= w_data_word;
                         when 4 =>  -- SR使能：1=使能，0=失能
                             r_SR_en <= w_data_word(0);
-                        when 5 =>  -- LLC_EN 输出：1=使能，0=失能
+                        when 5 =>  -- 主机缓启 + 从机发波：同步 LLC_EN 与光纤 D 命令
                             r_llc_en_out <= w_data_word(0);
+                            r_LLC_en     <= w_data_word(0);
                         when others =>
                             null;
                     end case;
@@ -249,7 +251,7 @@ begin
             end if;
         end process;
 
-        -- OPra：频率来自 llc_con_core.o_period；D/H 命令仍由串口注入
+        -- OPra：频率来自 llc_con_core.o_period；D/H 命令由 0x01/0x05 注入
         w_OPra_sel(51 downto 47) <= "10100";  -- H闭锁
         w_OPra_sel(46 downto 42) <= "11010" when r_LLC_en = '1' else "10100";  -- D工作/闭锁
         w_OPra_sel(41 downto 29) <= (others => '0');
