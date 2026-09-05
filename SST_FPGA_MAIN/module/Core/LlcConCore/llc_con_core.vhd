@@ -4,14 +4,14 @@
 --Original Author   :   Qigc
 --Creation Date     :   2026.09.03
 --Description       :   LLC 缓启控制核顶层（规范接口）。
---                      聚合：滑动平均 / 阶段 FSM / 斜坡(llc_ramp)。
+--                      聚合：delay_core 时基 / 滑动平均 / 阶段 FSM / 斜坡。
 --                      频率 PIR 暂不例化，后续再补；STAGE2/3 频率暂跟开环。
 --                      i_enable 脉冲启动；i_disable 停机回初始。
 --------------------------------------------------------------------------------
---Version           :   Rev 1.4
+--Version           :   Rev 1.5
 --modifier          :   Qigc
---Modify Date       :   2026.09.04
---Modify Record     :   去掉 llc_period_pi 例化；kp/ki/vref 预留待接
+--Modify Date       :   2026.09.05
+--Modify Record     :   去掉外部 i_delay_*；核内自例化 delay_core
 --------------------------------------------------------------------------------
 
 library ieee;
@@ -29,10 +29,6 @@ entity llc_con_core is
         i_tick    : in  std_logic;  -- AD/控制节拍（暂仅 vo_ma_filter）
         i_enable  : in  std_logic := '0';  -- 缓启启动脉冲
         i_disable : in  std_logic := '0';  -- 同步停机：清运行并回初始，高有效
-
-        -- delay_core 公共时基
-        i_delay_1ms : in std_logic;
-        i_delay_1s  : in std_logic;
 
         -- Analog / Param
         i_vo    : in  std_logic_vector(15 downto 0);
@@ -57,12 +53,12 @@ architecture rtl of llc_con_core is
     -- 缓启参数（architecture 常量）
     -- 正常时长 → llc_ramp；超时时长 → llc_stage_fsm
     ---------------------------------------------------------------------------
-    constant T_RAMP0_MS    : natural := 500;    -- STAGE0 开环 duty 斜坡
-    constant T_RAMP1_MS    : natural := 500;    -- STAGE1 开环频率斜坡
-    constant T_RAMP2_MS    : natural := 500;    -- STAGE2：当前电压→目标 的爬升时长
-    constant T_TO0_MS      : natural := 1000;   -- STAGE0 超时
-    constant T_TO1_MS      : natural := 1000;   -- STAGE1 超时
-    constant T_TO2_MS      : natural := 1000;   -- STAGE2 超时
+    constant T_RAMP0_MS    : natural := 2000;    -- STAGE0 开环 duty 斜坡
+    constant T_RAMP1_MS    : natural := 2000;    -- STAGE1 开环频率斜坡
+    constant T_RAMP2_MS    : natural := 2000;    -- STAGE2：当前电压→目标 的爬升时长
+    constant T_TO0_MS      : natural := 5000;   -- STAGE0 超时
+    constant T_TO1_MS      : natural := 5000;   -- STAGE1 超时
+    constant T_TO2_MS      : natural := 5000;   -- STAGE2 超时
     constant V_STAGE2_DONE : natural := 7200;   -- STAGE2 目标/完成 720.0 V
     constant V_FULL        : natural := 8000;   -- 额定上限 800.0 V（封顶用）
     constant DUTY_DONE     : natural := 1024;   -- 50%
@@ -82,6 +78,8 @@ architecture rtl of llc_con_core is
     signal w_ol_duty     : unsigned(15 downto 0);
     signal w_ol_freq     : unsigned(15 downto 0);
     signal w_vref        : unsigned(15 downto 0);  -- ramp 产出，PIR 后续接
+    signal w_delay_1ms   : std_logic;
+    signal w_delay_1s    : std_logic;
 
     signal r_duty   : unsigned(15 downto 0) := (others => '0');
     signal r_freq   : unsigned(15 downto 0) := to_unsigned(F_START, 16);
@@ -109,6 +107,19 @@ begin
     o_dco      <= w_dco;
     o_run_en   <= r_run_en;
 
+    -- 核内时基：与 i_sys_clk 同域，保证 1ms 单周期脉冲
+    U_DELAY : entity work.delay_core
+        generic map (
+            CLK_FREQ => CLK_FREQ
+        )
+        port map (
+            i_sys_clk   => i_sys_clk,
+            i_sys_rst   => i_sys_rst,
+            o_delay_1us => open,
+            o_delay_1ms => w_delay_1ms,
+            o_delay_1s  => w_delay_1s
+        );
+
     U_VO_MA : entity work.vo_ma_filter
         port map (
             i_sys_clk => i_sys_clk,
@@ -131,7 +142,7 @@ begin
         port map (
             i_sys_clk     => i_sys_clk,
             i_sys_rst     => i_sys_rst,
-            i_delay_1ms   => i_delay_1ms,
+            i_delay_1ms   => w_delay_1ms,
             i_enable      => i_enable,
             i_restart     => i_disable,
             i_duty        => w_ol_duty,
@@ -156,7 +167,7 @@ begin
         port map (
             i_sys_clk   => i_sys_clk,
             i_sys_rst   => i_sys_rst,
-            i_delay_1ms => i_delay_1ms,
+            i_delay_1ms => w_delay_1ms,
             i_run       => w_run,
             i_state     => w_state,
             i_vo        => unsigned(w_dco),
@@ -195,8 +206,7 @@ begin
                         r_freq <= to_unsigned(F_START, 16);
                 end case;
             end if;
-
-            end if;
+        end if;
     end process;
 
 end architecture rtl;

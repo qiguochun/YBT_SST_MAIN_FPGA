@@ -55,6 +55,8 @@ architecture rtl of llc_stage_fsm is
     signal r_done        : std_logic := '0';
     signal r_phase_done  : std_logic_vector(2 downto 0) := (others => '0');
     signal r_timeout_err : std_logic_vector(2 downto 0) := (others => '0');
+    signal r_delay_1ms_d : std_logic := '0';
+    signal w_ms_tick     : std_logic;
 
 begin
 
@@ -62,6 +64,9 @@ begin
     o_done        <= r_done;
     o_phase_done  <= r_phase_done;
     o_timeout_err <= r_timeout_err;
+
+    -- 只认 1ms 上升沿，避免 i_delay_1ms 常高时每拍都计数→瞬间超时 FAULT
+    w_ms_tick <= i_delay_1ms and (not r_delay_1ms_d);
 
     process (r_state)
     begin
@@ -84,7 +89,10 @@ begin
             r_done        <= '0';
             r_phase_done  <= (others => '0');
             r_timeout_err <= (others => '0');
+            r_delay_1ms_d <= '0';
         elsif rising_edge(i_sys_clk) then
+            r_delay_1ms_d <= i_delay_1ms;
+
             if i_restart = '1' then
                 r_state       <= STAGE0;
                 r_run         <= '0';
@@ -98,7 +106,7 @@ begin
                 r_run      <= '1';
                 r_stage_ms <= (others => '0');
 
-            elsif (r_run = '1') and (i_delay_1ms = '1') then
+            elsif (r_run = '1') and (w_ms_tick = '1') then
                 case r_state is
                     when STAGE0 =>
                         if i_duty >= DUTY_DONE then

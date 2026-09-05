@@ -68,6 +68,8 @@ architecture rtl of llc_ramp is
     signal r_vref      : unsigned(15 downto 0) := (others => '0');
     signal r_vref_step : unsigned(15 downto 0) := (others => '0');
     signal r_state_d   : unsigned(2 downto 0) := (others => '0');
+    signal r_delay_1ms_d : std_logic := '0';
+    signal w_ms_tick     : std_logic;
 
     -- 进入 STAGE2 后：减/除 分拍，缩短组合路径
     type t_step_pipe is (P_IDLE, P_SUB, P_DIV);
@@ -79,6 +81,17 @@ begin
     o_duty <= r_duty;
     o_freq <= to_unsigned(r_freq, 16);
     o_vref <= r_vref;
+
+    w_ms_tick <= i_delay_1ms and (not r_delay_1ms_d);
+
+    process (i_sys_clk, i_sys_rst)
+    begin
+        if i_sys_rst = '1' then
+            r_delay_1ms_d <= '0';
+        elsif rising_edge(i_sys_clk) then
+            r_delay_1ms_d <= i_delay_1ms;
+        end if;
+    end process;
 
     -- ===================== 开环 duty / 频率斜坡（编译期步长，每 ms 累加） =====================
     process (i_sys_clk, i_sys_rst)
@@ -93,7 +106,7 @@ begin
             if i_run = '0' then
                 r_duty <= to_unsigned(DUTY_MIN_ST0, 16);
                 r_freq <= F_START;
-            elsif i_delay_1ms = '1' then
+            elsif w_ms_tick = '1' then
                 if i_state = 0 then
                     v_duty := to_integer(r_duty) + C_DUTY_STEP;
                     if v_duty >= DUTY_MAX then
@@ -181,7 +194,7 @@ begin
                 -- B. 每 ms 抬高 Vref
                 ------------------------------------------------------------------
                 if (r_step_pipe = P_IDLE) and (not v_enter)
-                    and (i_delay_1ms = '1') and (to_integer(i_state) >= 2) then
+                    and (w_ms_tick = '1') and (to_integer(i_state) >= 2) then
                     if i_edv < V_FULL then
                         v_cap := i_edv;
                     else

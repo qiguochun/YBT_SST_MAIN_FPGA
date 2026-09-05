@@ -5,9 +5,9 @@ the Block Editor! File corruption is VERY likely to occur.
 */
 (header "symbol" (version "1.1"))
 (symbol
-	(rect 16 16 232 272)
+	(rect 16 16 232 240)
 	(text "llc_con_core" (rect 5 0 80 12)(font "Arial" ))
-	(text "inst" (rect 8 240 25 252)(font "Arial" ))
+	(text "inst" (rect 8 208 25 220)(font "Arial" ))
 	(port
 		(pt 0 32)
 		(input)
@@ -67,30 +67,16 @@ the Block Editor! File corruption is VERY likely to occur.
 	(port
 		(pt 0 160)
 		(input)
-		(text "i_delay_1ms" (rect 0 0 64 12)(font "Arial" ))
-		(text "i_delay_1ms" (rect 21 155 85 167)(font "Arial" ))
+		(text "i_disable" (rect 0 0 48 12)(font "Arial" ))
+		(text "i_disable" (rect 21 155 69 167)(font "Arial" ))
 		(line (pt 0 160)(pt 16 160)(line_width 1))
 	)
 	(port
 		(pt 0 176)
 		(input)
-		(text "i_delay_1s" (rect 0 0 56 12)(font "Arial" ))
-		(text "i_delay_1s" (rect 21 171 77 183)(font "Arial" ))
-		(line (pt 0 176)(pt 16 176)(line_width 1))
-	)
-	(port
-		(pt 0 192)
-		(input)
-		(text "i_disable" (rect 0 0 48 12)(font "Arial" ))
-		(text "i_disable" (rect 21 187 69 199)(font "Arial" ))
-		(line (pt 0 192)(pt 16 192)(line_width 1))
-	)
-	(port
-		(pt 0 208)
-		(input)
 		(text "i_enable" (rect 0 0 44 12)(font "Arial" ))
-		(text "i_enable" (rect 21 203 65 215)(font "Arial" ))
-		(line (pt 0 208)(pt 16 208)(line_width 1))
+		(text "i_enable" (rect 21 171 65 183)(font "Arial" ))
+		(line (pt 0 176)(pt 16 176)(line_width 1))
 	)
 	(port
 		(pt 216 32)
@@ -135,6 +121,6 @@ the Block Editor! File corruption is VERY likely to occur.
 		(line (pt 216 112)(pt 200 112)(line_width 1))
 	)
 	(drawing
-		(rectangle (rect 16 16 200 224)(line_width 1))
+		(rectangle (rect 16 16 200 192)(line_width 1))
 	)
 )
