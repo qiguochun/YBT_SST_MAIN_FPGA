@@ -6,12 +6,14 @@
 --Description       :   LLC 缓启阶段状态机。
 --                      i_enable 脉冲锁存后开始 STAGE0→3；
 --                      i_restart 清使能并回 STAGE0 初始。
+--                      STAGE1：频率降到 F_STAGE1_DONE，或 Vo 先到 V_STAGE1_DONE，
+--                      均进入 STAGE2 电压缓启（提前停降频）。
 --                      完成条件满足 → 下一阶段；超时未满足 → 超时错误+FAULT。
 --------------------------------------------------------------------------------
 --Version           :   Rev 0.8
 --modifier          :   Qigc
---Modify Date       :   2026.09.04
---Modify Record     :   使能恢复为脉冲锁存
+--Modify Date       :   2026.09.05
+--Modify Record     :   STAGE1 增加 Vo 到达阈值也可进 STAGE2
 --------------------------------------------------------------------------------
 
 library ieee;
@@ -24,8 +26,9 @@ entity llc_stage_fsm is
         T_STAGE1_MS   : natural := 1000;
         T_STAGE2_MS   : natural := 1000;
         DUTY_DONE     : natural := 1024;
-        F_STAGE1_DONE : natural := 6000;
-        V_STAGE2_DONE : natural := 7200
+        F_STAGE1_DONE : natural := 6000;  -- STAGE1 频率终点 (Hz/10)
+        V_STAGE1_DONE : natural := 7200;  -- STAGE1 切入电压缓启 720.0 V
+        V_STAGE2_DONE : natural := 8000   -- STAGE2 缓启完成 800.0 V
     );
     port (
         i_sys_clk : in  std_logic;
@@ -122,7 +125,8 @@ begin
                         end if;
 
                     when STAGE1 =>
-                        if i_freq <= F_STAGE1_DONE then
+                        -- 降频到位，或电压先提到 V_STAGE1_DONE → 停降频进电压缓启
+                        if (i_freq <= F_STAGE1_DONE) or (i_vo >= V_STAGE1_DONE) then
                             r_state         <= STAGE2;
                             r_stage_ms      <= (others => '0');
                             r_phase_done(1) <= '1';

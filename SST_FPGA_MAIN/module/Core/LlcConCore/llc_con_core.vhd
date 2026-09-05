@@ -59,12 +59,13 @@ architecture rtl of llc_con_core is
     constant T_TO0_MS      : natural := 5000;   -- STAGE0 超时
     constant T_TO1_MS      : natural := 5000;   -- STAGE1 超时
     constant T_TO2_MS      : natural := 5000;   -- STAGE2 超时
-    constant V_STAGE2_DONE : natural := 7200;   -- STAGE2 目标/完成 720.0 V
-    constant V_FULL        : natural := 8000;   -- 额定上限 800.0 V（封顶用）
+    constant V_STAGE1_DONE : natural := 7200;   -- STAGE1→2：电压提到 720.0 V 可提前停降频
+    constant V_STAGE2_DONE : natural := 8000;   -- STAGE2 完成 800.0 V
+    constant V_FULL        : natural := 8000;   -- 额定上限 800.0 V（Vref 封顶）
     constant DUTY_DONE     : natural := 1024;   -- 50%
     constant DUTY_MAX      : natural := 1024;
     constant F_START       : natural := 8000;   -- 80.0 kHz
-    constant F_END         : natural := 6000;   -- 60.0 kHz
+    constant F_END         : natural := 5000;   -- 50.0 kHz
     constant F_MIN         : natural := 2500;   -- 25.0 kHz（PIR 后续用）
 
     signal w_dco         : std_logic_vector(15 downto 0);
@@ -93,7 +94,8 @@ architecture rtl of llc_con_core is
 
 begin
 
-    w_vref_cap   <= to_unsigned(V_STAGE2_DONE, 16) when w_state = 2 else unsigned(i_edv);
+    -- STAGE2：Vref 爬向额定；目标取 min(i_edv, V_FULL)，由 llc_ramp 内部再截一次
+    w_vref_cap   <= to_unsigned(V_FULL, 16) when w_state = 2 else unsigned(i_edv);
     w_d2set_keep <= i_d2set;
     w_kp_keep    <= i_kp;
     w_ki_keep    <= i_ki;
@@ -137,6 +139,7 @@ begin
             T_STAGE2_MS   => T_TO2_MS,
             DUTY_DONE     => DUTY_DONE,
             F_STAGE1_DONE => F_END,
+            V_STAGE1_DONE => V_STAGE1_DONE,
             V_STAGE2_DONE => V_STAGE2_DONE
         )
         port map (
