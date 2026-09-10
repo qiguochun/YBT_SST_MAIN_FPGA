@@ -20,9 +20,9 @@ refer to the applicable agreement for further details.
 */
 (header "symbol" (version "1.1"))
 (symbol
-	(rect 16 16 224 304)
+	(rect 16 16 224 368)
 	(text "sz_ad_param_sel" (rect 5 0 76 12)(font "Arial" ))
-	(text "inst" (rect 8 272 20 284)(font "Arial" ))
+	(text "inst" (rect 8 336 20 348)(font "Arial" ))
 	(port
 		(pt 0 32)
 		(input)
@@ -136,6 +136,34 @@ refer to the applicable agreement for further details.
 		(line (pt 0 272)(pt 16 272)(line_width 1))
 	)
 	(port
+		(pt 0 288)
+		(input)
+		(text "i_ud[15..0]" (rect 0 0 48 12)(font "Arial" ))
+		(text "i_ud[15..0]" (rect 21 283 69 295)(font "Arial" ))
+		(line (pt 0 288)(pt 16 288)(line_width 3))
+	)
+	(port
+		(pt 0 304)
+		(input)
+		(text "i_id[15..0]" (rect 0 0 48 12)(font "Arial" ))
+		(text "i_id[15..0]" (rect 21 299 69 311)(font "Arial" ))
+		(line (pt 0 304)(pt 16 304)(line_width 3))
+	)
+	(port
+		(pt 0 320)
+		(input)
+		(text "i_id_ma[15..0]" (rect 0 0 60 12)(font "Arial" ))
+		(text "i_id_ma[15..0]" (rect 21 315 81 327)(font "Arial" ))
+		(line (pt 0 320)(pt 16 320)(line_width 3))
+	)
+	(port
+		(pt 0 336)
+		(input)
+		(text "i_llc_fault[15..0]" (rect 0 0 80 12)(font "Arial" ))
+		(text "i_llc_fault[15..0]" (rect 21 331 101 343)(font "Arial" ))
+		(line (pt 0 336)(pt 16 336)(line_width 3))
+	)
+	(port
 		(pt 208 32)
 		(output)
 		(text "o_uart_txd" (rect 0 0 43 12)(font "Arial" ))
@@ -214,6 +242,6 @@ refer to the applicable agreement for further details.
 		""
 		(type "PARAMETER_SIGNED_DEC")	)
 	(drawing
-		(rectangle (rect 16 16 192 288)(line_width 1))
+		(rectangle (rect 16 16 192 352)(line_width 1))
 	)
 )

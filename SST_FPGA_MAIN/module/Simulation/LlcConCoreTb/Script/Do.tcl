@@ -15,7 +15,6 @@ vmap work work
 
 foreach f {
     vo_ma_filter.vhd
-    llc_stage_fsm.vhd
     llc_ramp.vhd
     llc_period_pi.vhd
     llc_con_core.vhd

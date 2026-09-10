@@ -9022,9 +9022,9 @@ refer to the applicable agreement for further details.
 	)
 )
 (symbol
-	(rect 5280 3072 5496 3280)
+	(rect 5280 3072 5496 3296)
 	(text "llc_con_core" (rect 5 0 66 12)(font "Arial" ))
-	(text "inst19" (rect 8 192 36 209)(font "Intel Clear" ))
+	(text "inst19" (rect 8 208 36 225)(font "Intel Clear" ))
 	(port
 		(pt 0 32)
 		(input)
@@ -9096,6 +9096,13 @@ refer to the applicable agreement for further details.
 		(line (pt 0 176)(pt 16 176))
 	)
 	(port
+		(pt 0 192)
+		(input)
+		(text "i_id[15..0]" (rect 0 0 51 12)(font "Arial" ))
+		(text "i_id[15..0]" (rect 21 187 72 199)(font "Arial" ))
+		(line (pt 0 192)(pt 16 192)(line_width 3))
+	)
+	(port
 		(pt 216 32)
 		(output)
 		(text "o_duty_cmd[15..0]" (rect 0 0 93 12)(font "Arial" ))
@@ -9137,8 +9144,22 @@ refer to the applicable agreement for further details.
 		(text "o_run_en" (rect 152 107 200 119)(font "Arial" ))
 		(line (pt 216 112)(pt 200 112))
 	)
+	(port
+		(pt 216 128)
+		(output)
+		(text "o_dci[15..0]" (rect 0 0 61 12)(font "Arial" ))
+		(text "o_dci[15..0]" (rect 139 123 200 135)(font "Arial" ))
+		(line (pt 216 128)(pt 200 128)(line_width 3))
+	)
+	(port
+		(pt 216 144)
+		(output)
+		(text "o_fault[15..0]" (rect 0 0 73 12)(font "Arial" ))
+		(text "o_fault[15..0]" (rect 124 139 197 151)(font "Arial" ))
+		(line (pt 216 144)(pt 200 144)(line_width 3))
+	)
 	(drawing
-		(rectangle (rect 16 16 200 192))
+		(rectangle (rect 16 16 200 208))
 	)
 )
 (symbol
@@ -9234,9 +9255,9 @@ refer to the applicable agreement for further details.
 	)
 )
 (symbol
-	(rect 5288 2696 5496 2984)
+	(rect 5288 2696 5496 3048)
 	(text "sz_ad_param_sel" (rect 5 0 89 12)(font "Arial" ))
-	(text "inst_param0" (rect 8 272 68 284)(font "Arial" ))
+	(text "inst_param0" (rect 8 336 68 348)(font "Arial" ))
 	(port
 		(pt 0 32)
 		(input)
@@ -9350,6 +9371,34 @@ refer to the applicable agreement for further details.
 		(line (pt 0 272)(pt 16 272))
 	)
 	(port
+		(pt 0 288)
+		(input)
+		(text "i_ud[15..0]" (rect 0 0 53 12)(font "Arial" ))
+		(text "i_ud[15..0]" (rect 21 283 74 295)(font "Arial" ))
+		(line (pt 0 288)(pt 16 288)(line_width 3))
+	)
+	(port
+		(pt 0 304)
+		(input)
+		(text "i_id[15..0]" (rect 0 0 53 12)(font "Arial" ))
+		(text "i_id[15..0]" (rect 21 299 74 311)(font "Arial" ))
+		(line (pt 0 304)(pt 16 304)(line_width 3))
+	)
+	(port
+		(pt 0 320)
+		(input)
+		(text "i_id_ma[15..0]" (rect 0 0 67 12)(font "Arial" ))
+		(text "i_id_ma[15..0]" (rect 21 315 88 327)(font "Arial" ))
+		(line (pt 0 320)(pt 16 320)(line_width 3))
+	)
+	(port
+		(pt 0 336)
+		(input)
+		(text "i_llc_fault[15..0]" (rect 0 0 86 12)(font "Arial" ))
+		(text "i_llc_fault[15..0]" (rect 21 331 107 343)(font "Arial" ))
+		(line (pt 0 336)(pt 16 336)(line_width 3))
+	)
+	(port
 		(pt 208 32)
 		(output)
 		(text "o_uart_txd" (rect 0 0 51 12)(font "Arial" ))
@@ -9428,7 +9477,7 @@ refer to the applicable agreement for further details.
 		""
 		(type "PARAMETER_SIGNED_DEC")	)
 	(drawing
-		(rectangle (rect 16 16 192 288))
+		(rectangle (rect 16 16 192 352))
 	)
 )
 (symbol
@@ -14472,6 +14521,30 @@ refer to the applicable agreement for further details.
 	(pt 5288 2968)
 )
 (connector
+	(text "Ud[15..0]" (rect 5206 2968 5252 2980)(font "Arial" ))
+	(pt 5208 2984)
+	(pt 5288 2984)
+	(bus)
+)
+(connector
+	(text "Id[15..0]" (rect 5206 2984 5247 2996)(font "Arial" ))
+	(pt 5208 3000)
+	(pt 5288 3000)
+	(bus)
+)
+(connector
+	(text "Id_ma[15..0]" (rect 5206 3000 5270 3012)(font "Arial" ))
+	(pt 5208 3016)
+	(pt 5288 3016)
+	(bus)
+)
+(connector
+	(text "llc_fault[15..0]" (rect 5194 3016 5273 3028)(font "Arial" ))
+	(pt 5208 3032)
+	(pt 5288 3032)
+	(bus)
+)
+(connector
 	(text "A_T2" (rect 5506 2704 5530 2716)(font "Arial" ))
 	(pt 5496 2728)
 	(pt 5576 2728)
@@ -14625,6 +14698,34 @@ refer to the applicable agreement for further details.
 (connector
 	(pt 5232 3232)
 	(pt 5280 3232)
+)
+(connector
+	(text "Id[15..0]" (rect 5226 3296 5267 3308)(font "Arial" ))
+	(pt 5216 3312)
+	(pt 5272 3312)
+	(bus)
+)
+(connector
+	(pt 5272 3312)
+	(pt 5272 3264)
+	(bus)
+)
+(connector
+	(pt 5272 3264)
+	(pt 5280 3264)
+	(bus)
+)
+(connector
+	(text "Id_ma[15..0]" (rect 5506 3184 5570 3196)(font "Arial" ))
+	(pt 5496 3200)
+	(pt 5584 3200)
+	(bus)
+)
+(connector
+	(text "llc_fault[15..0]" (rect 5506 3200 5584 3212)(font "Arial" ))
+	(pt 5496 3216)
+	(pt 5584 3216)
+	(bus)
 )
 (junction (pt 7400 456))
 (junction (pt 7400 576))

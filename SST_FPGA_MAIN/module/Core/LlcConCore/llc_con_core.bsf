@@ -5,9 +5,9 @@ the Block Editor! File corruption is VERY likely to occur.
 */
 (header "symbol" (version "1.1"))
 (symbol
-	(rect 16 16 232 240)
+	(rect 16 16 232 256)
 	(text "llc_con_core" (rect 5 0 80 12)(font "Arial" ))
-	(text "inst" (rect 8 208 25 220)(font "Arial" ))
+	(text "inst" (rect 8 224 25 236)(font "Arial" ))
 	(port
 		(pt 0 32)
 		(input)
@@ -79,6 +79,13 @@ the Block Editor! File corruption is VERY likely to occur.
 		(line (pt 0 176)(pt 16 176)(line_width 1))
 	)
 	(port
+		(pt 0 192)
+		(input)
+		(text "i_id[15..0]" (rect 0 0 52 12)(font "Arial" ))
+		(text "i_id[15..0]" (rect 21 187 73 199)(font "Arial" ))
+		(line (pt 0 192)(pt 16 192)(line_width 3))
+	)
+	(port
 		(pt 216 32)
 		(output)
 		(text "o_duty_cmd[15..0]" (rect 0 0 92 12)(font "Arial" ))
@@ -120,7 +127,21 @@ the Block Editor! File corruption is VERY likely to occur.
 		(text "o_run_en" (rect 152 107 200 119)(font "Arial" ))
 		(line (pt 216 112)(pt 200 112)(line_width 1))
 	)
+	(port
+		(pt 216 128)
+		(output)
+		(text "o_dci[15..0]" (rect 0 0 64 12)(font "Arial" ))
+		(text "o_dci[15..0]" (rect 136 123 200 135)(font "Arial" ))
+		(line (pt 216 128)(pt 200 128)(line_width 3))
+	)
+	(port
+		(pt 216 144)
+		(output)
+		(text "o_fault[15..0]" (rect 0 0 76 12)(font "Arial" ))
+		(text "o_fault[15..0]" (rect 124 139 200 151)(font "Arial" ))
+		(line (pt 216 144)(pt 200 144)(line_width 3))
+	)
 	(drawing
-		(rectangle (rect 16 16 200 192)(line_width 1))
+		(rectangle (rect 16 16 200 208)(line_width 1))
 	)
 )

@@ -13,7 +13,7 @@
 --                        [15:0]  / D0~D15  ：物理旁路/清零
 --                        [41:29] / D29~D41 ：物理旁路/清零
 --                        [51:47]           ：H命令，SIM 固定 "10100"(闭锁)
---                        [46:42]           ：D命令，r_LLC_en=1->"11010"；=0->"10100"
+--                        [46:42]           ：D命令，使能且无故障->"11010"；否则->"10100"
 --                        [28:16]           ：串口频率 -> r_P0ra
 --                      光纤打包：llcduty & OPra[51:42] & PWM1 & PWM2 & OPra[41:0]
 --                        → 模块侧 zz[53:44]=OPra[51:42]，故 D 命令落在 zz[48:44]
@@ -30,20 +30,20 @@
 --                      PWM1/PWM2：始终物理旁路。
 --                      SIM 输出：o_OPra[28:16]<=i_llc_period[12:0]，o_llcduty<=i_llc_duty
 --                      TX 监控通道（uint32，小端）：
---                        CH0=保留0
+--                        CH0=llc o_fault（bit0过压 bit1过流 bit2缓启超时）,
 --                        CH1=LLC_en(0x01), CH2=freq(P0ra), CH3=llcduty(0x03),
 --                        CH4=SR_en(0x04), CH5~7=zcdtout 分片, CH8=LLC_EN(0x05),
 --                        CH9 =llc o_duty_cmd, CH10=llc o_period(f_sw),
---                        CH11=llc o_dco, CH12=llc 状态打包,
---                        CH13~15=0（预留）
---                        CH12 bit：[2:0]=o_state, [3]=o_done, [4]=o_run_en
+--                        CH11=llc o_dco（滑动平均）, CH12=Ud 瞬时,
+--                        CH13=llc 状态打包, CH14=Id 瞬时, CH15=Id 滑动平均
+--                        CH13 bit：[2:0]=o_state(0=IDLE 1=ST0 2=ST1 3=ST2), [3]=o_done, [4]=o_run_en
 --                      r_zcdtout[69:0] =
 --                        llcduty[15:0] & OPra[51:42] & PWM1 & PWM2 & OPra[41:0]
 --------------------------------------------------------------------------------
---Version           :   Rev 1.2
+--Version           :   Rev 1.5
 --modifier          :   Qigc
---Modify Date       :   2026.09.05
---Modify Record     :   0x05 同步 r_LLC_en，主机缓启与从机光纤 Dauto 一并置位
+--Modify Date       :   2026.09.09
+--Modify Record     :   CH0=llc o_fault
 --------------------------------------------------------------------------------
 
 library ieee;
@@ -87,13 +87,17 @@ entity sz_ad_param_sel is
         -- 串口地址 0x05：bit0=1 使能，=0 失能（顶层可暂不接）
         LLC_EN    : out std_logic;
 
-        -- llc_con_core 监测输入（挂串口 CH9~12；未接时默认 0）
+        -- llc_con_core 监测输入（挂串口 CH9~13；未接时默认 0）
         i_llc_duty   : in std_logic_vector(15 downto 0) := (others => '0');
         i_llc_period : in std_logic_vector(15 downto 0) := (others => '0');
         i_llc_dco    : in std_logic_vector(15 downto 0) := (others => '0');
         i_llc_state  : in std_logic_vector(2 downto 0)  := (others => '0');
         i_llc_done   : in std_logic := '0';
-        i_llc_run_en : in std_logic := '0'
+        i_llc_run_en : in std_logic := '0';
+        i_ud         : in std_logic_vector(15 downto 0) := (others => '0');  -- 输出电压瞬时，CH12
+        i_id         : in std_logic_vector(15 downto 0) := (others => '0');  -- 输出电流瞬时，CH14
+        i_id_ma      : in std_logic_vector(15 downto 0) := (others => '0');  -- 输出电流平均，CH15
+        i_llc_fault  : in std_logic_vector(15 downto 0) := (others => '0')   -- 故障字，CH0
     );
 end entity sz_ad_param_sel;
 
@@ -186,12 +190,13 @@ begin
 
         -- 监测缓冲：
         --   CH1~4 命令回显；CH5~7 = I5/I6/I7；CH8 = LLC_EN
-        --   CH9~12 = llc_con_core 输出
+        --   CH9~15 = llc / Ud / Id 观测
         process (r_LLC_en, r_P0ra, r_llcduty, r_SR_en, r_llc_en_out, r_zcdtout,
-                 i_llc_duty, i_llc_period, i_llc_dco,
-                 i_llc_state, i_llc_done, i_llc_run_en)
+                 i_llc_duty, i_llc_period, i_llc_dco, i_ud, i_id, i_id_ma,
+                 i_llc_state, i_llc_done, i_llc_run_en, i_llc_fault)
         begin
             w_mon_buf <= (others => '0');
+            w_mon_buf(31 downto 0)    <= x"0000" & i_llc_fault;             -- CH0 故障
             w_mon_buf(63 downto 32)   <= (31 downto 1 => '0') & r_LLC_en;   -- CH1
             w_mon_buf(95 downto 64)   <= x"0000" & r_P0ra;                  -- CH2 频率
             w_mon_buf(127 downto 96)  <= x"0000" & r_llcduty;               -- CH3 占空比
@@ -202,14 +207,17 @@ begin
             w_mon_buf(255 downto 224) <= (31 downto 6 => '0')
                                        & r_zcdtout(69 downto 64);           -- CH7/I7 高位补0
             w_mon_buf(287 downto 256) <= (31 downto 1 => '0') & r_llc_en_out;  -- CH8 LLC_EN
-            -- llc_con_core 观测（CH9~12）
+            -- llc_con_core 观测（CH9~13）
             w_mon_buf(319 downto 288) <= x"0000" & i_llc_duty;              -- CH9  duty
             w_mon_buf(351 downto 320) <= x"0000" & i_llc_period;            -- CH10 period
-            w_mon_buf(383 downto 352) <= x"0000" & i_llc_dco;               -- CH11 dco
-            w_mon_buf(415 downto 384) <= (31 downto 5 => '0')
+            w_mon_buf(383 downto 352) <= x"0000" & i_llc_dco;               -- CH11 dco 平均
+            w_mon_buf(415 downto 384) <= x"0000" & i_ud;                    -- CH12 Ud 瞬时
+            w_mon_buf(447 downto 416) <= (31 downto 5 => '0')
                                        & i_llc_run_en                       -- [4]
                                        & i_llc_done                         -- [3]
-                                       & i_llc_state;                       -- [2:0]
+                                       & i_llc_state;                       -- [2:0] CH13
+            w_mon_buf(479 downto 448) <= x"0000" & i_id;                    -- CH14 Id 瞬时
+            w_mon_buf(511 downto 480) <= x"0000" & i_id_ma;                 -- CH15 Id 平均
         end process;
 
         ------------------------------------------------------------------
@@ -252,8 +260,9 @@ begin
         end process;
 
         -- OPra：频率来自 llc_con_core.o_period；D/H 命令由 0x01/0x05 注入
+        -- o_fault≠0：强制 D 闭锁（10100），与使能无关
         w_OPra_sel(51 downto 47) <= "10100";  -- H闭锁
-        w_OPra_sel(46 downto 42) <= "11010" when r_LLC_en = '1' else "10100";  -- D工作/闭锁
+        w_OPra_sel(46 downto 42) <= "11010" when (r_LLC_en = '1') and (i_llc_fault = x"0000") else "10100";
         w_OPra_sel(41 downto 29) <= (others => '0');
         w_OPra_sel(28 downto 16) <= i_llc_period(12 downto 0);  -- f_sw（Hz/10）低13位
         w_OPra_sel(15 downto 0)  <= (others => '0');
