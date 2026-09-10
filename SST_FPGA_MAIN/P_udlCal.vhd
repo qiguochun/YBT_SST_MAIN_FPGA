@@ -1,0 +1,40 @@
+LIBRARY IEEE;
+USE IEEE.STD_LOGIC_1164.all;
+USE IEEE.STD_LOGIC_arith.all;
+USE IEEE.STD_LOGIC_signed.all;
+
+ENTITY P_udlCal IS
+	PORT(
+		RESET	:	IN  STD_LOGIC;
+		START	:	IN  STD_LOGIC;
+		Uin		:	IN  STD_LOGIC_VECTOR(15 DOWNTO 0);
+		Iin		:	IN  STD_LOGIC_VECTOR(15 DOWNTO 0);
+		RST		:	OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
+		IDo		:	OUT STD_LOGIC_VECTOR(15 DOWNTO 0)
+		);
+END ENTITY;
+
+ARCHITECTURE BEHAV OF P_udlCal IS
+
+BEGIN
+
+Main:PROCESS(RESET,START)
+VARIABLE var_lpfU  :	INTEGER RANGE -32767 TO 32767:=0;
+VARIABLE var_lpfI  :	INTEGER RANGE -32767 TO 32767:=0;
+VARIABLE var_rst   :	INTEGER RANGE -262143 TO 262143:=0;
+
+BEGIN
+	IF(RESET='1') THEN
+		var_lpfU:=0;		var_lpfI:=0;		var_rst:=0;			RST<=(OTHERS=>'0');
+	ELSIF(START'EVENT AND START='1') THEN
+		var_lpfU:=CONV_INTEGER(Uin)/32;
+		var_lpfI:=CONV_INTEGER(Iin)/32;
+		var_rst:=-(var_lpfU*var_lpfI*11)/32;
+		IF(var_rst>=32767) 		THEN	RST<=conv_std_logic_vector(32767,16);
+		ELSIF(var_rst<-32767) 	THEN	RST<=conv_std_logic_vector(-32767,16);
+		ELSE 							RST<=conv_std_logic_vector(var_rst,16);
+		END IF;		
+	END IF;	
+END PROCESS Main;
+
+END BEHAV;

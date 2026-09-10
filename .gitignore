@@ -1,0 +1,28 @@
+# Quartus compile / incremental databases
+SST_FPGA_MAIN/db/
+SST_FPGA_MAIN/incremental_db/
+SST_FPGA_MAIN/greybox_tmp/
+
+# Programming reports and bitstreams; keep SignalTap
+SST_FPGA_MAIN/output_files/*
+!SST_FPGA_MAIN/output_files/stp1.stp
+
+# Quartus session / auto-generated
+*.qws
+*_assignment_defaults.qdf
+PLLJ_PLLSPE_INFO.txt
+*.qarlog
+*.bak
+*.cmp
+
+# ModelSim / Questa
+work/
+**/work/
+*.wlf
+transcript
+modelsim.ini
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
